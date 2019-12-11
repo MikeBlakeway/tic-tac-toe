@@ -44,54 +44,6 @@ function Square(props) {
 **/
 class Board extends React.Component {
 
-    // add a constructor to the class to initialize the state
-    constructor(props) {
-
-        // all component classes that have a constructor should start it with a super(props) call.
-        super(props)
-
-        /** STATE
-         * squares: contain an array of 9 nulls corresponding to 9 squares
-         * xIsNext: used to track which played goes next.
-            * ? We set the first move to be “X” by default.
-         * -----------------------------------------------------------
-        **/
-        this.state = {
-            squares: Array(9).fill(null),
-            xIsNext: true,
-        }
-    }
-
-    /** METHOD: HANDLECLICK
-     * @method
-     * Name: handleClick()
-     * ? ...
-     *
-     * @property
-     * Name: '...'
-     * ? ...
-     * -----------------------------------------------------------
-    **/
-    handleClick(i) {
-
-        // we call .slice() to create a copy of the squares array to modify instead of modifying the existing array
-        const squares = this.state.squares.slice()
-
-        // a conditional to check if a player has already won the game. If 'True' then the method will return early.
-        if (calculateWinner(squares) || squares[i]) {
-            return
-        }
-
-        squares[ i ] = this.state.xIsNext ? 'X' : 'O'
-
-        // set the new 'squares'
-        // flip the value of xIsNext to the opposite of what is currently in state
-        this.setState({
-            squares: squares,
-            xIsNext: !this.state.xIsNext,
-        })
-    }
-
     /** METHOD: RENDERSQUARE
      * @method
      * Name: renderSquare()
@@ -110,27 +62,15 @@ class Board extends React.Component {
     renderSquare(i) {
         return (
             <Square
-                value={this.state.squares[ i ]} // @prop name 'value'
-                onClick={() => this.handleClick(i)} // @prop name 'onClick'
+                value={this.props.squares[ i ]} // @prop name 'value'
+                onClick={() => this.props.onClick(i)} // @prop name 'onClick'
             />
         )
     }
 
     render() {
-        const winner = calculateWinner(this.state.squares)
-        let status
-
-        if (winner) {
-            status = 'Winner: ' + winner
-        }
-        else {
-            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O')
-        }
-
         return (
             <div>
-                <div className="status">{status}</div>
-
                 <div className="board-row">
                     {this.renderSquare(0)}
                     {this.renderSquare(1)}
@@ -147,11 +87,11 @@ class Board extends React.Component {
                     {this.renderSquare(8)}
                 </div>
             </div>
-           /** THIS.RENDERSQUARE(i)
-            * ? calls the renderSquare method of 'this' parent class (see @class 'Board').
-            * this method requires one parameter 'i', which is ultimately translated into the prop 'value'.
-            * -----------------------------------------------------------
-           **/
+            /** THIS.RENDERSQUARE(i)
+             * ? calls the renderSquare method of 'this' parent class (see @class 'Board').
+             * this method requires one parameter 'i', which is ultimately translated into the prop 'value'.
+             * -----------------------------------------------------------
+            **/
         )
     }
 }
@@ -164,14 +104,93 @@ class Board extends React.Component {
  * -----------------------------------------------------------
 **/
 class Game extends React.Component {
+
+    // add a constructor to the class to initialize the state
+    constructor(props) {
+
+        // all component classes that have a constructor should start it with a super(props) call.
+        super(props)
+
+        /** STATE
+         * history: an array of objects that correspond to the state of the board after each move
+         * squares: an array of 9 'null' values corresponding to 9 squares on the board
+         * xIsNext: a boolean used to track which player goes next
+            * ? We set the first move to be “X” by default.
+         * -----------------------------------------------------------
+        **/
+        this.state = {
+            history: [ {
+                squares: Array(9).fill(null),
+            } ],
+            xIsNext: true,
+        }
+    }
+
+    /** METHOD: HANDLECLICK
+     * @method
+     * Name: handleClick()
+     * ? ...
+     *
+     * @property
+     * Name: '...'
+     * ? ...
+     * -----------------------------------------------------------
+    **/
+    handleClick(i) {
+
+        const history = this.state.history
+
+        // get the most recent board from our history
+        const current = history[ history.length - 1 ]
+
+        // we call .slice() to create a copy of the squares array to modify instead of modifying the existing array
+        const squares = current.squares.slice()
+
+        // a conditional to check if a player has already won the game. If 'True' then the method will return early.
+        if (calculateWinner(squares) || squares[ i ]) {
+            return
+        }
+
+        // determine whether this player is 'X' or 'O' by checking if the value of xIsNext is either true or false. If true, then we are player 'X' and if false then we are player 'O'. 
+        squares[ i ] = this.state.xIsNext ? 'X' : 'O'
+
+        // add the new 'squares' array to the state history
+        // flip the value of xIsNext to the opposite of what is currently in state
+        this.setState({
+            history: history.concat([ {
+                squares: squares,
+            } ]),
+            xIsNext: !this.state.xIsNext,
+        })
+        /** concat()
+         * NB: unlike the array push() method, the concat() method doesn’t mutate the original array so is preferrable to maintain immutability
+        */
+    }
+
     render() {
+        const history = this.state.history
+        const current = history[ history.length - 1 ]
+        const winner = calculateWinner(current.squares)
+
+        let status
+        if (winner) {
+            status = 'Winner: ' + winner
+        }
+        else {
+            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O')
+        }
+
+
         return (
             <div className="game">
                 <div className="game-board">
-                    <Board />
+                    <Board
+                        squares={current.squares}
+                        onClick={(i) => this.handleClick(i)}
+                    />
                 </div>
                 <div className="game-info">
-                    <div>{/* status */}</div>
+                    <div>{status}</div>
                     <ol>{/* TODO */}</ol>
                 </div>
             </div>
